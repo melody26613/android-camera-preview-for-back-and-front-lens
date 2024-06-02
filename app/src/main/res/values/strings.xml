@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">CameraPreview</string>
+    <string name="switch_camera_len">switch</string>
 </resources>

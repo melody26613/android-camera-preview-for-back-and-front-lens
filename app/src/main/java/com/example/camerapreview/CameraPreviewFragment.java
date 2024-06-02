@@ -10,9 +10,11 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.widget.Button;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.camera.core.CameraInfoUnavailableException;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.ImageAnalysis;
 import androidx.camera.core.ImageCapture;
@@ -41,6 +43,8 @@ public class CameraPreviewFragment extends Fragment {
 
     private ProcessCameraProvider processCameraProvider;
 
+    private int lensFacing = CameraSelector.LENS_FACING_BACK;
+
     public static CameraPreviewFragment newInstance() {
         CameraPreviewFragment fragment = new CameraPreviewFragment();
         return fragment;
@@ -60,6 +64,7 @@ public class CameraPreviewFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         binding.previewView.post(this::initCamera);
+        binding.switchLenButton.post(this::initSwitchButton);
     }
 
     private void initCamera() {
@@ -87,7 +92,7 @@ public class CameraPreviewFragment extends Fragment {
     private void bindPreview() {
         Log.i(TAG, "bindPreview()");
 
-        CameraSelector cameraSelector = new CameraSelector.Builder().requireLensFacing(CameraSelector.LENS_FACING_BACK).build();
+        CameraSelector cameraSelector = new CameraSelector.Builder().requireLensFacing(lensFacing).build();
 
         ImageCapture imageCapture = new ImageCapture.Builder().build();
 
@@ -120,10 +125,13 @@ public class CameraPreviewFragment extends Fragment {
         }
     }
 
-    private void unbindPreview() {
-        if (processCameraProvider != null) {
-            processCameraProvider.unbindAll();
-        }
+    private void initSwitchButton() {
+        // Listener for button used to switch cameras
+        Button switchButton = binding.switchLenButton;
+        switchButton.setOnClickListener(v -> {
+            lensFacing = (lensFacing == CameraSelector.LENS_FACING_BACK) ? CameraSelector.LENS_FACING_FRONT : CameraSelector.LENS_FACING_BACK;
+            bindPreview();
+        });
     }
 
     public class MyImageAnalyzer implements ImageAnalysis.Analyzer {
