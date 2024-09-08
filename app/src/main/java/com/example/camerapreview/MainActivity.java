@@ -4,12 +4,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.FragmentManager;
 
 import android.os.Bundle;
-import android.view.View;
-import android.view.WindowManager;
 
 public class MainActivity extends AppCompatActivity {
-
-    private CameraPreviewFragment cameraPreviewFragment;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -20,7 +16,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void initCameraPreview() {
-        cameraPreviewFragment = CameraPreviewFragment.newInstance();
+        CameraPreviewFragment cameraPreviewFragment = CameraPreviewFragment.newInstance();
 
         FragmentManager fragmentManager = getSupportFragmentManager();
         fragmentManager.beginTransaction()

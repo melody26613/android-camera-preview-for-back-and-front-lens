@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">CameraPreview</string>
     <string name="switch_camera_len">switch</string>
+    <string name="hint_grant_permission">Please grant the camera permission</string>
 </resources>

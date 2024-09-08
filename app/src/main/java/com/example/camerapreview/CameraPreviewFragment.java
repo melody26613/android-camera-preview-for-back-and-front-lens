@@ -1,24 +1,24 @@
 package com.example.camerapreview;
 
+import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.pm.PackageManager;
-import android.media.Image;
 import android.os.Bundle;
 import android.util.Log;
 import android.util.Size;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.WindowManager;
 import android.widget.Button;
+import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.camera.core.CameraInfoUnavailableException;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.ImageAnalysis;
 import androidx.camera.core.ImageCapture;
-import androidx.camera.core.ImageProxy;
 import androidx.camera.core.Preview;
 import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.core.app.ActivityCompat;
@@ -27,7 +27,6 @@ import androidx.fragment.app.Fragment;
 
 import com.example.camerapreview.databinding.FragmentCameraPreviewBinding;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.google.mlkit.vision.common.InputImage;
 
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -45,14 +44,29 @@ public class CameraPreviewFragment extends Fragment {
 
     private int lensFacing = CameraSelector.LENS_FACING_BACK;
 
+    // can pass interface as argument if needed
     public static CameraPreviewFragment newInstance() {
-        CameraPreviewFragment fragment = new CameraPreviewFragment();
-        return fragment;
+        return new CameraPreviewFragment();
     }
 
     public CameraPreviewFragment() {
         //  An empty constructor for Android System to use, otherwise exception may occur.
     }
+
+    private ActivityResultLauncher<String> requestPermissionLauncher = registerForActivityResult(
+            new ActivityResultContracts.RequestPermission(),
+            isGranted -> {
+                if (isGranted != null && isGranted) {
+                    bindPreview();
+                } else {
+                    try {
+                        Toast.makeText(getActivity(), getString(R.string.hint_grant_permission), Toast.LENGTH_LONG).show();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+    );
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -96,12 +110,10 @@ public class CameraPreviewFragment extends Fragment {
 
         ImageCapture imageCapture = new ImageCapture.Builder().build();
 
-        MyImageAnalyzer imageAnalyzer = new MyImageAnalyzer();
         ImageAnalysis imageAnalysis = new ImageAnalysis.Builder()
                 .setTargetResolution(new Size(1280, 720))
                 .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                 .build();
-        imageAnalysis.setAnalyzer(cameraExecutor, imageAnalyzer);
 
         processCameraProvider.unbindAll();
         processCameraProvider.bindToLifecycle(
@@ -110,15 +122,13 @@ public class CameraPreviewFragment extends Fragment {
 
     public void show() {
         try {
+            String permission = Manifest.permission.CAMERA;
+
             if (ActivityCompat.checkSelfPermission(
-                    requireContext(), android.Manifest.permission.CAMERA) == (PackageManager.PERMISSION_GRANTED)) {
+                    requireContext(), permission) == (PackageManager.PERMISSION_GRANTED)) {
                 bindPreview();
             } else {
-                ActivityCompat.requestPermissions(
-                        requireActivity(),
-                        new String[]{android.Manifest.permission.CAMERA},
-                        MyApplication.PERMISSION_REQUEST_CODE_CAMERA
-                );
+                requestPermissionLauncher.launch(permission);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -126,24 +136,11 @@ public class CameraPreviewFragment extends Fragment {
     }
 
     private void initSwitchButton() {
-        // Listener for button used to switch cameras
         Button switchButton = binding.switchLenButton;
         switchButton.setOnClickListener(v -> {
             lensFacing = (lensFacing == CameraSelector.LENS_FACING_BACK) ? CameraSelector.LENS_FACING_FRONT : CameraSelector.LENS_FACING_BACK;
             bindPreview();
         });
-    }
-
-    public class MyImageAnalyzer implements ImageAnalysis.Analyzer {
-        @Override
-        public void analyze(@NonNull ImageProxy image) {
-            scanBarcode(image);
-        }
-
-        private void scanBarcode(ImageProxy image) {
-            @SuppressLint({"UnsafeExperimentalUsageError", "UnsafeOptInUsageError"})
-            Image image1 = image.getImage();
-        }
     }
 
     @SuppressLint("RestrictedApi")
